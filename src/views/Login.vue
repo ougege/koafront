@@ -84,19 +84,20 @@
 import * as api from '../api'
 import BottomFixed from './BottomFixed'
 import {util} from '../utils/util'
+import * as types from '../store/mutation-type'
 export default {
   components: { BottomFixed },
   data () {
     return {
       loading: false,
-      activeName: 'second',
+      activeName: 'first',
       logo: {
         url: '/static/img/logo.png'
         // fit: ['fill', 'contain', 'cover', 'none', 'scale-down']
       },
       ruleFormPW: {
-        name: '',
-        password: ''
+        name: 'ougege',
+        password: '123456'
       },
       ruleFormCode: {
         name: '',
@@ -172,14 +173,15 @@ export default {
         let params = this.ruleFormPW
         api._UserLogin(params).then(res => {
           console.log(res)
-          let data = res.data.data
+          let data = res.data
           let user = {
             name: data.name,
             password: data.password
           }
           // console.log(that.$store.state)
-          that.$store.state.global.userData = user
-          that.$router.push({ path: '/LayOut' })
+          that.$store.dispatch(types.SYSTEM_USERDATA, user)
+          that.$store.dispatch(types.SYSTEM_TOKEN, res.token)
+          that.$router.push({ path: '/forWard/detail' })
           // this.$router.push({ path: this.redirect, query: this.otherQuery })
         }).catch(err => {
           console.log(err)

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { Message } from 'element-ui'
-import store from 'store'
+import store from '../store'
 import router from '../router'
+import * as types from '../store/mutation-type'
 
 // 来源：axios拦截器接口配置与使用
 // https://www.jianshu.com/p/646ed4edf51f
@@ -18,9 +19,10 @@ axios.create({
 // 请求拦截器
 axios.interceptors.request.use(
   config => {
-    // if (store.state.token) { // 判断是否存在token，如果存在的话，则每个http header都加上token
-    //   config.headers.authorization = store.state.token // 请求头加上token
-    // }
+    const token = store.state.global.token || localStorage.getItem(types.SYSTEM_TOKEN)
+    if (token) { // 判断是否存在token，如果存在的话，则每个http header都加上token
+      config.headers.authorization = store.state.global.token // 请求头加上token
+    }
     return config
   },
   error => {

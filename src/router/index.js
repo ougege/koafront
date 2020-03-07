@@ -14,13 +14,15 @@ export default new Router({
   },
   routes: [
     {
-      // path: '/',
-      // name: 'login',
-      // component (resolve) {
-      //   require(['../views/Login.vue'], resolve)
-      // },
-      path: '/',
+      path: '/login',
       name: 'login',
+      component (resolve) {
+        require(['../views/Login.vue'], resolve)
+      }
+    },
+    {
+      path: '/',
+      name: 'layout',
       component (resolve) {
         require(['../views/LayOut.vue'], resolve)
       },

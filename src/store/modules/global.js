@@ -7,7 +7,9 @@ const state = {
     phone: '',
     userId: '',
     email: ''
-  }
+  },
+  /* ====== 用户信息 ====== */
+  token: ''
 }
 // state状态
 const getters = {
@@ -21,6 +23,17 @@ const getters = {
         }
       } catch (e) {}
     }
+  },
+  token: state => {
+    if (!state.token) {
+      // 尝试从LocalStorage中获取
+      try {
+        let data = JSON.parse(localStorage.getItem(types.SYSTEM_TOKEN))
+        if (data) {
+          state.token = data
+        }
+      } catch (e) {}
+    }
   }
 }
 // 动作导致的状态变化:同步
@@ -28,6 +41,10 @@ const mutations = {
   /* ====== 用户信息 ====== */
   [types.SYSTEM_USERDATA] (state, userData) {
     state.userData = userData
+  },
+  /* ==== token信息 ==== */
+  [types.SYSTEM_TOKEN] (state, token) {
+    state.token = token
   }
 }
 // 等同于mutations,可以包含异步操作
@@ -36,6 +53,11 @@ const actions = {
   [types.SYSTEM_USERDATA] ({commit}, userData) {
     localStorage.setItem(types.SYSTEM_USERDATA, JSON.stringify(userData))
     commit(types.SYSTEM_USERDATA, userData)
+  },
+  /* ==== token信息 ==== */
+  [types.SYSTEM_TOKEN] ({commit}, token) {
+    localStorage.setItem(types.SYSTEM_TOKEN, JSON.stringify(token))
+    commit(types.SYSTEM_TOKEN, token)
   }
 }
 export default {

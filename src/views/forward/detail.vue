@@ -25,7 +25,9 @@ export default {
   },
   created () {},
   destroyed () {},
-  mounted () {},
+  mounted () {
+    console.log(this.$store.state.global)
+  },
   computed: {},
   watch: {},
   methods: {
