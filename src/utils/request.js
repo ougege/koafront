@@ -21,7 +21,7 @@ axios.interceptors.request.use(
   config => {
     const token = store.state.global.token || localStorage.getItem(types.SYSTEM_TOKEN)
     if (token) { // 判断是否存在token，如果存在的话，则每个http header都加上token
-      config.headers.authorization = store.state.global.token // 请求头加上token
+      config.headers.authorization = token // 请求头加上token
     }
     return config
   },
