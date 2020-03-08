@@ -1,4 +1,6 @@
+import Vue from 'vue'
 import * as types from '../mutation-type'
+
 // 保存组件的数据
 const state = {
   /* ====== 用户信息 ====== */
@@ -19,7 +21,8 @@ const getters = {
       try {
         let data = JSON.parse(localStorage.getItem(types.SYSTEM_USERDATA))
         if (data) {
-          state.userData = data
+          Vue.set(state, 'userData', data)
+          // state.userData = data
         }
       } catch (e) {}
     }
@@ -28,9 +31,10 @@ const getters = {
     if (!state.token) {
       // 尝试从LocalStorage中获取
       try {
-        let data = JSON.parse(localStorage.getItem(types.SYSTEM_TOKEN))
+        let data = localStorage.getItem(types.SYSTEM_TOKEN)
         if (data) {
-          state.token = data
+          Vue.set(state, 'token', data)
+          // state.token = data
         }
       } catch (e) {}
     }
@@ -40,11 +44,13 @@ const getters = {
 const mutations = {
   /* ====== 用户信息 ====== */
   [types.SYSTEM_USERDATA] (state, userData) {
-    state.userData = userData
+    Vue.set(state, 'userData', userData)
+    // state.userData = userData
   },
   /* ==== token信息 ==== */
   [types.SYSTEM_TOKEN] (state, token) {
-    state.token = token
+    Vue.set(state, 'token', token)
+    // state.token = token
   }
 }
 // 等同于mutations,可以包含异步操作
@@ -56,7 +62,7 @@ const actions = {
   },
   /* ==== token信息 ==== */
   [types.SYSTEM_TOKEN] ({commit}, token) {
-    localStorage.setItem(types.SYSTEM_TOKEN, JSON.stringify(token))
+    localStorage.setItem(types.SYSTEM_TOKEN, token)
     commit(types.SYSTEM_TOKEN, token)
   }
 }

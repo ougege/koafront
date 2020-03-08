@@ -178,9 +178,10 @@ export default {
             name: data.name,
             password: data.password
           }
-          // console.log(that.$store.state)
+          // console.log(res.token)
           that.$store.dispatch(types.SYSTEM_USERDATA, user)
           that.$store.dispatch(types.SYSTEM_TOKEN, res.token)
+          console.log(that.$store)
           that.$router.push({ path: '/forWard/detail' })
           // this.$router.push({ path: this.redirect, query: this.otherQuery })
         }).catch(err => {
