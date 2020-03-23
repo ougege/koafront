@@ -47,6 +47,16 @@ axios.interceptors.response.use(
     if (error.response.status) {
       // 对已经请求的axios请求401错误处理
       switch (error.response.status) {
+        // 500:服务错误
+        case 500:
+          localStorage.clear()
+          router.replace({
+            path: '/login',
+            query: {
+              redirect: router.currentRoute.fullPath
+            }
+          })
+          break
         // 401:未登录
         // 未登录则跳转登录页面,并携带当前路径
         case 401:
