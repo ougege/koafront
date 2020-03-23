@@ -1,8 +1,8 @@
 import {areaInfoUtil} from './areaInfo/AreaInfoUtil'
+import {type} from './type'
 const validateRules = require('./validateRules')
 // const authHttp = require('./http/authHttp')
 const config = require('../common/appConfig')
-const type = require('./type')
 // import {setStorage, getStorage, removeStorage, clearStorage} from './storage'
 var base64encodechars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 var base64decodechars = [

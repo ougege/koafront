@@ -34,6 +34,7 @@ export default {
   mounted () {
     // console.log(this.$store.state.global)
     // this.utils = util
+    console.log(util)
     // console.log(this.that)
     this.alink.sup()
   },
