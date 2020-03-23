@@ -1,6 +1,8 @@
 <template>
   <div class="forward-detail">
     <el-button @click="getDetail">点我</el-button>
+    <el-button @click="util.debounce(fnDelay, delay, that)">测试debonce</el-button>
+    <section>大家好{{alink}}</section>
     <el-input
       type="textarea"
       :autosize="{ minRows: 4, maxRows: 6}"
@@ -16,20 +18,38 @@
 
 <script>
 import * as api from '../../api'
+import {util} from '../../utils/util'
 export default {
   data () {
     return {
       loading: false,
-      singleCreate: ''
+      singleCreate: '',
+      delay: 1000,
+      timeId: '',
+      alink: '欧哥歌测试'
     }
   },
   created () {},
   destroyed () {},
   mounted () {
-    console.log(this.$store.state.global)
+    // console.log(this.$store.state.global)
+    // this.utils = util
+    // console.log(this.that)
+    this.alink.sup()
   },
-  computed: {},
-  watch: {},
+  computed: {
+    util () {
+      return util
+    },
+    that () {
+      return this
+    }
+  },
+  watch: {
+    // fn (val) {
+    //   console.log(val)
+    // }
+  },
   methods: {
     getDetail () {
       let that = this
@@ -45,6 +65,9 @@ export default {
       }).catch(err => {
         console.log(err)
       })
+    },
+    fnDelay () {
+      console.log(new Date().getTime())
     }
   }
 }

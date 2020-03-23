@@ -1,11 +1,9 @@
-var SIGN_REGEXP = /([yMdhsmS])(\1*)/g
-var DEFAULT_PATTERN = 'yyyy-MM-dd'
-function padding (s, len) {
-  len = len - (s + '').length
-  for (var i = 0; i < len; i++) { s = '0' + s }
-  return s
-}
-
+import {areaInfoUtil} from './areaInfo/AreaInfoUtil'
+const validateRules = require('./validateRules')
+// const authHttp = require('./http/authHttp')
+const config = require('../common/appConfig')
+const type = require('./type')
+// import {setStorage, getStorage, removeStorage, clearStorage} from './storage'
 var base64encodechars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 var base64decodechars = [
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -18,116 +16,6 @@ var base64decodechars = [
   41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1]
 
 const util = {
-  getQueryStringByName: function (name) {
-    var reg = new RegExp('"(^|&)' + name + '=([^&]*)(&|$)', 'i')
-    var r = window.location.search.substr(1).match(reg)
-    var context = ''
-    if (r != null) {
-      context = r[2]
-    }
-    reg = null
-    r = null
-    return context === null || context === '' || context === 'undefined' ? '' : context
-  },
-  isArray: function (o) {
-    if (!o) {
-      return false
-    }
-    return Object.prototype.toString.call(o) === '[object Array]'
-  },
-  cloneObj: function (obj) {
-    let str
-    if (!obj) {
-      return obj
-    }
-    let newobj = obj.constructor === Array ? [] : {}
-    if (typeof obj !== 'object') {
-      return
-    } else if (window.JSON) {
-      str = JSON.stringify(obj) // 序列化对象
-      newobj = JSON.parse(str) // 还原
-    } else {
-      for (var i in obj) {
-        newobj[i] = typeof obj[i] === 'object' ? this.cloneObj(obj[i]) : obj[i]
-      }
-    }
-    return newobj
-  },
-  formatDate: {
-    format: function (date, pattern) {
-      pattern = pattern || DEFAULT_PATTERN
-      return pattern.replace(SIGN_REGEXP, function ($0) {
-        switch ($0.charAt(0)) {
-          case 'y': return padding(date.getFullYear(), $0.length)
-          case 'M': return padding(date.getMonth() + 1, $0.length)
-          case 'd': return padding(date.getDate(), $0.length)
-          case 'w': return date.getDay() + 1
-          case 'h': return padding(date.getHours(), $0.length)
-          case 'm': return padding(date.getMinutes(), $0.length)
-          case 's': return padding(date.getSeconds(), $0.length)
-          case 'S': return padding(date.getMilliseconds(), $0.length) // 毫秒
-        }
-      })
-    },
-    parse: function (dateString, pattern) {
-      var matchs1 = pattern.match(SIGN_REGEXP)
-      var matchs2 = dateString.match(/(\d)+/g)
-      if (matchs1.length === matchs2.length) {
-        var _date = new Date(1970, 0, 1)
-        for (var i = 0; i < matchs1.length; i++) {
-          var _int = parseInt(matchs2[i])
-          var sign = matchs1[i]
-          switch (sign.charAt(0)) {
-            case 'y': _date.setFullYear(_int); break
-            case 'M': _date.setMonth(_int - 1); break
-            case 'd': _date.setDate(_int); break
-            case 'h': _date.setHours(_int); break
-            case 'm': _date.setMinutes(_int); break
-            case 's': _date.setSeconds(_int); break
-            case 'S': _date.setMilliseconds(_int); break // 毫秒
-          }
-        }
-        return _date
-      }
-      return null
-    }
-  },
-  generateUUID: function () {
-    var d = new Date().getTime()
-    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = (d + Math.random() * 16) % 16 | 0
-      d = Math.floor(d / 16)
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
-    })
-    return uuid
-  },
-  // 获取cookie
-  getCookie: function (name) {
-    var arr = null
-    var reg = new RegExp('(^| )' + name + '=([^;]*)(;|$)')
-    arr = document.cookie.match(reg)
-    if (arr) {
-      return (arr[2])
-    } else {
-      return null
-    }
-  },
-  // 设置cookie,增加到vue实例方便全局调用
-  setCookie: function (cname, value, expiredays) {
-    var exdate = new Date()
-    exdate.setDate(exdate.getDate() + expiredays)
-    document.cookie = cname + '=' + escape(value) + ((expiredays == null) ? '' : ';expires=' + exdate.toGMTString())
-  },
-  // 删除cookie
-  delCookie: function (name) {
-    var exp = new Date()
-    exp.setTime(exp.getTime() - 1)
-    document.cookie = name + '=' + escape('') + ';expires=' + exp.toGMTString()
-    // var cval = this.getCookie(name)
-    // if (cval != null) {
-    //   document.cookie = name + '=' + cval + ';expires=' + exp.toGMTString()
-    // }
-  },
   base64encode: function (str) {
     var out
     var i
@@ -212,251 +100,423 @@ const util = {
     }
     return out
   },
-  // 新增一个时间方法
-  createTime: function () {
-    let time = new Date()
-    let year = time.getFullYear()
-    let month = time.getMonth() + 1
-    let date = time.getDate()
-    let hours = time.getHours()
-    let minutes = time.getMinutes()
-    let seconds = time.getSeconds()
-    return year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds
-  },
-  // 判断剧院，剧团，all
-  getEntityTypeCnNameByEparams (enterEntity) {
-    let ret = 'ALL'
-    if (enterEntity === 'all') {
-      ret = 'ALL'
-    }
-    if (enterEntity === 'juyuan') {
-      ret = '剧院'
-    }
-    if (enterEntity === 'jutuan') {
-      ret = '剧团'
-    }
-    return ret
-  },
-  // 根据经营体类型,判断EntityTypeCnName
-  getEntityTypeCnNameByValue (value) {
-    let ret = 'ALL'
-    if (value === 999999) {
-      ret = 'ALL'
-    }
-    if (value === 1) {
-      ret = '剧院'
-    }
-    if (value === 2) {
-      ret = '剧团'
-    }
-    return ret
-  },
-  // 模态框关闭前确认
-  dialogCloseConfirm: function (done, subThis) {
-    subThis.$confirm('确认关闭？')
-      .then(_ => {
-        done()
-      })
-      .catch(_ => {})
-  },
-  // 计算有用宽度,高度
-  usefullHeightAndWidth: function (e) {
-    // 参数e标识获取高度和宽度
-    let winWidth = 0
-    let winHeight = 0
-    // 获取窗口宽度
-    if (window.innerWidth) {
-      winWidth = window.innerWidth
-    } else if ((document.body) && (document.body.clientWidth)) {
-      winWidth = document.body.clientWidth
-    }
-    // 获取窗口高度
-    if (window.innerHeight) {
-      winHeight = window.innerHeight
-    } else if ((document.body) && (document.body.clientHeight)) {
-      winHeight = document.body.clientHeight
-    }
-    // 通过深入Document内部对body进行检测，获取窗口大小
-    if (document.documentElement && document.documentElement.clientHeight && document.documentElement.clientWidth) {
-      winHeight = document.documentElement.clientHeight
-      winWidth = document.documentElement.clientWidth
-    }
-    if (e === 'height') {
-      return winHeight
-    }
-    if (e === 'width') {
-      return winWidth
-    }
-  },
-  // 计算鼠标相对于浏览器窗口位置
-  getMousePos: function (event) {
-    let e = event || window.event
-    return {'x': e.clientX, 'y': e.clientY}
-  },
-  // 删除数组指定元素removeByValue进行元素删除
-  removeByValue (arr, val, func) {
-    if (!(arr instanceof Array)) {
-      throw new Error('first args need a array')
-    }
-    for (let i = 0; i < arr.length; i++) {
-      if (func(arr[i], val)) {
-        arr.splice(i, 1)
-        break
-      }
-    }
-  },
-  validateRules: {
-    // el校验11位手机号
-    phoneNumber (rule, value, callback) {
-      if (/^[1][3,4,5,7,8][0-9]{9}$/g.test(value)) {
-        callback()
+  // 获取数据
+  // getData (url, params, method, cb, failCb) {
+  //   let that = this
+  //   if (type['isUndefined'](method)) {
+  //     method = 'POST'
+  //   }
+  //   if (method.toUpperCase() === 'GET') {
+  //     authHttp.get(url, params).then(res => {
+  //       if (that.setData) {
+  //         that.setData({
+  //           netTimeOut: false // 不超时
+  //         })
+  //       } else {
+  //         that.netTimeOut = false
+  //       }
+  //       type['isFunction'](cb) && cb(res)
+  //     }).catch(res => {
+  //       errorFunction(that, res, failCb)
+  //     })
+  //   } else {
+  //     authHttp.post(url, params).then(res => {
+  //       if (that.setData) {
+  //         that.setData({
+  //           netTimeOut: false
+  //         })
+  //       } else {
+  //         that.netTimeOut = false
+  //       }
+  //       type['isFunction'](cb) && cb(res)
+  //     }).catch(res => {
+  //       errorFunction(that, res, failCb)
+  //     })
+  //   }
+  // },
+  // 获取下一页数据
+  // etNextPageData (url, params, method, cb, failCb) {
+  //   let that = this
+  //   this.getData.call(that, url, params, method,
+  //     (res) => {
+  //       // 当前页码等于总页码则没有更多
+  //       let hasMore = res.data.PageCount === res.data.CurrentPageIndex ? false : true
+  //       if (that.setData) {
+  //         that.setData({
+  //           dataList: [...that.data.dataList, ...res.data.DataRows],
+  //           pageIndex: res.data.CurrentPageIndex,
+  //           hasMore: hasMore
+  //         })
+  //       } else {
+  //         that.dataList = [...that.data.dataList, ...res.data.DataRows]
+  //         that.pageIndex = res.data.CurrentPageIndex
+  //         that.hasMore = hasMore
+  //       }
+  //       type['isFunction'](cb) && cb(res)
+  //     },
+  //     (err) => {
+  //       type['isFunction'](failCb) && failCb(err)
+  //     }
+  //   )
+  // },
+  // 错误处理
+  errorFunction (that, res, failCb) {
+    // 无错误状态
+    if (res.errMsg && res.errMsg.includes('request:fail')) {
+      if (that.setData) {
+        that.setData({
+          netTimeOut: true
+        })
       } else {
-        let tips = '请输入正确的手机号！'
-        callback(tips)
+        that.netTimeOut = true
       }
-    },
-    // 手机或电话
-    telPhoneNumber (rule, value, callback) {
-      if (/^[1][3,4,5,7,8][0-9]{9}$/g.test(value) || /^(0\d{2,3}-\d{7,8})(-\d{1,4})?$/.test(value)) {
-        callback()
-      } else {
-        let tips = '请输入正确的号码！'
-        callback(tips)
-      }
-    },
-    // 判断组织网址
-    webUrl (rule, value, callback) {
-      if (/^(?=^.{3,255}$)(http(s)?:\/\/)?(www\.)?[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:\d+)*(\/\w+\.\w+)*$/.test(value)) {
-        callback()
-      } else {
-        let tips = '请输入正确格式网址！'
-        callback(tips)
-      }
-    },
-    // 校验邮箱名称允许汉字、字母、数字，域名只允许英文域名
-    mailString (rule, value, callback) {
-      if (value) {
-        if (/^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/g.test(value)) {
-          callback()
+      if (failCb && type['isFunction'](failCb)) {
+        if (res.data) {
+          res.data.message = '请求超时'
         } else {
-          let tips = '邮箱格式不正确！'
-          callback(tips)
+          res.data = {message: '请求超时'}
         }
-      } else {
-        callback()
+        failCb(res)
+        return false
+      }
+    } else {
+      let status = res.statusCode
+      switch (status) {
+        // case 460 短信
+        case 401:
+          // 重新获取token 等方法
+          break
+        default:
+          // 如果业务已经定义了错误提示，则使用业务的处理
+          if (failCb && type['isFunction'](failCb)) {
+            failCb(res)
+            return false
+          }
       }
     }
   },
-  loadingFun (type) {
-    var that = this
-    if (typeof type === 'undefined') {
-      that.loadingTip = that.$loading({
-        lock: true,
-        text: '加载中...',
-        spinner: 'el-icon-loading',
-        background: 'rgba(0, 0, 0, 0.8)'
-      })
-    } else if (type === 'close') {
-      that.loadingTip.close()
-    }
-  },
-  // 数字格式化
-  toThousands (num) {
-    num = (num || 0).toString()
-    var result = ''
-    var sof = '00'
-    if (num.indexOf('.') > 0) {
-      sof = num.split('.')[1]
-      num = num.split('.')[0]
-    }
-    while (num.length > 3) {
-      result = ',' + num.slice(-3) + result
-      num = num.slice(0, num.length - 3)
-    }
-    if (num) { result = num + result }
-    if (result.indexOf('-') === 0) {
-      result = result.replace('-,', '-')
-    }
-    return result + '.' + sof
-  },
-  // 参数去空
-  paramsRemoveNull (obj) {
-    if (!(obj instanceof Object)) {
-      throw new Error('first args need a object')
-    }
-    for (let item in obj) {
-      if (typeof obj[item] === 'undefined' || obj[item] === '') {
-        delete obj[item]
-      }
-    }
-    return obj
-  },
-  newDate (args) {
-    if (typeof args === 'string') {
-      if (args.indexOf('T') < 0) return new Date(args.replace(/-/g, '/').replace(/\./g, '/'))
-      return new Date(args)
-    } else if (args instanceof Date || (args && typeof args.toDateString === 'function' && typeof args.getDate === 'function' && typeof args.setDate === 'function')) {
-      return new Date(args.getFullYear(), args.getMonth(), args.getDate(), args.getHours(), args.getMinutes(), args.getSeconds())
-    } else {
-      return new Date(...arguments)
-    }
-  },
-  // 公用方法(api请求时,判断请求参数是否有值，有值obj动态添加)
-  objAddAttr (attr, value, obj) {
-    if (value !== '' && value !== undefined && value.length !== 0) {
-      obj[attr] = value
-    }
-    return obj
-  },
-  // 事件方法：兼容IE,DOM0级和DOM2级
-  // 添加句柄
-  addHandler (element, type, handler) {
-    if (element.addEventListener) {
-      element.addEventListener(type, handler, false)
-    } else if (element.attachEvent) {
-      element.attachEvent('on' + type, handler)
-    } else {
-      element['on' + type] = handler
-    }
-  },
-  // 删除句柄
-  removeHandler (element, type, handler) {
-    if (element.removeEventListener) {
-      element.removeEventListener(type, handler, false)
-    } else if (element.detachEvent) {
-      element.detachEvent('on' + type, handler)
-    } else {
-      element['on' + type] = null
-    }
-  },
-  getElement (event) {
-    return event.target || event.srcElement
-  },
-  preventDefault (event) {
-    if (event.preventDefault) {
-      event.preventDefault()
-    } else {
-      event.returnValue = false
-    }
-  },
-  stopPropagation (event) {
-    if (event.stopPropagation) {
-      event.stopPropagation()
-    } else {
-      event.cancelBubble = true
-    }
-  },
-  // 对象拷贝：连同原型和实例属性一起
-  cpObject (obj) {
-    if (obj === null) {
+  // 浅拷贝
+  shallowCopy (obj) {
+    if (type['isNull'](obj)) {
       return null
     } else {
       return Object.create(
-        Object.getPrototypeOf(obj),
-        Object.getOwnPropertyDescriptors(obj)
+        Object.getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj)
       )
     }
-  }
+  },
+  // 深拷贝
+  deepCopy (obj) {
+    let target = {}
+    if (type['isNull'](obj) || typeof obj !== 'object') {
+      return obj
+    }
+    // 不要使用Object.keys遍历:不遍历可枚举的原型链属性
+    for (let key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (typeof obj[key] === 'object') {
+          target[key] = this.deepCopy(obj[key])
+        } else {
+          target[key] = obj[key]
+        }
+      }
+    }
+    return target
+  },
+  // 分享页面操作
+  commonShareAppMessage (params) {
+    if (type['isUndefined'](params)) {
+      params = config.shareMessage
+    }
+    return params
+  },
+  // 统一跳转方法:t跳转类型
+  // <text catchtap='doViewTap' data-url='/pages/login/login?title=navigate'>跳转</text>
+  // let data = e.currentTarget.dataset
+  // let url = data.url
+  // app.util.commonViewTap(url)
+  // commonViewTap (url, t) {
+  //   switch (t) {
+  //     case 1: // 关闭当前页面,跳转到应用内的某个页面.但是不允许跳转到tabbar
+  //       wx.redirectTo({
+  //         url: url
+  //       })
+  //       break
+  //     case 2: // 跳转到tabbar页面,并关闭其他所有非tabBar页面
+  //       wx.switchTab({
+  //         url: url
+  //       })
+  //       break
+  //     case 3: // 关闭所有页面，打开到应用内的某个页面
+  //       wx.reLaunch({
+  //         url: url
+  //       })
+  //       break
+  //     case 99: // 关闭当前页面,跳转到应用内的某个页面。但是不能跳到tabbar页面.getCurrentPages()获取页面栈
+  //       wx.navigateBack({
+  //         delta: 1
+  //       })
+  //     default: // 保留当前页面，跳转到应用内的某个页面使用 wx.navigateBack 可以返回到原页面。小程序中页面栈最多十层
+  //       // 新增events方法，页面通信 https://developers.weixin.qq.com/miniprogram/dev/api/route/wx.navigateTo.html
+  //       wx.navigateTo({
+  //         url: url
+  //       })
+  //   }
+  // },
+  // 微信内置地图位置
+  // viewWxAddress (args) {
+  //   if (!args || type['isUndefined'](args.latitude) || type['isUndefined'](args.longitude)) {
+  //     // 错误坐标会定位到北京
+  //     return
+  //   }
+  //   wx.openLocation({
+  //     latitude: args.latitude, // 经度
+  //     longitude: args.longitude, // 纬度
+  //     name: args.name, // 位置名
+  //     address: args.address, // 地址详细说明
+  //     scale: args.scale || 18 // 5-18,默认18
+  //   })
+  // },
+  // 数组去重:不带id普通数组去重;带id，数组对象去重
+  arrDuplicateRemove (arr, id) {
+    let temp = []
+    let idArr = []
+    if (!id) {
+      arr.forEach(item => {
+        if (!temp.includes(item)) {
+          temp.push(item)
+        }
+      })
+    } else {
+      arr.forEach(item => {
+        if (!idArr.includes(item[id])) {
+          idArr.push(item[id])
+          temp.push(item)
+        }
+      })
+    }
+    return temp
+  },
+  // 数组删除某项值
+  arrRemoveByValue (arr, value, attr) {
+    if (!type['isArray'](arr)) {
+      throw new Error('必须是数组')
+    } else {
+      // 不带attr，删除值;
+      if (!attr) {
+        arr.includes(value) && arr.splice(arr.indexOf(value), 1)
+      } else { // 带attr，删除属性
+        arr.filter(item => {
+          if (item[attr] === value) return item
+        })
+      }
+    }
+    return arr
+  },
+  // 美式价格，隔三加逗号
+  numToThousands (num) {
+    num = (num || 0).toString()
+    let decimal = '00'
+    let result = ''
+    if (num.includes('.')) {
+      decimal = num.split('.')[1]
+      num = num.split('.')[0]
+    }
+    if (num.length > 3) {
+      let k = 0
+      for (let i = num.length; i > 0; i--) {
+        result += num.charAt(i - 1)
+        k += 1
+        if (k === 3 && i !== 1) {
+          result += ','
+          k = 0
+        }
+      }
+      result = result.split('').reverse().join('')
+    } else {
+      result = num
+    }
+    return `${result}.${decimal}`
+  },
+  // 获取客户端系统信息
+  // https://developers.weixin.qq.com/miniprogram/dev/api/base/system/system-info/wx.getSystemInfoSync.html
+  // getSystemInfoSync () {
+  //   // let res = wx.getSystemInfo()
+  //   let systemInfo = {}
+  //   try {
+  //     let res = wx.getSystemInfoSync() // 同步版本
+  //     systemInfo = {
+  //       brand: res.brand, // 设备品牌
+  //       model: res.model, // 设备型号
+  //       pixelRatio: res.pixelRatio, // 设备像素比
+  //       screenWidth: res.screenWidth, // 屏幕宽度
+  //       screenHeight: res.screenHeight, // 屏幕高度
+  //       windowWidth: res.windowWidth, // 可使用窗口宽度
+  //       windowHeight: res.windowHeight, // 可使用窗口高度
+  //       statusBarHeight: res.statusBarHeight, // 状态栏的高度
+  //       language: res.language, // 微信设置的语言
+  //       version: res.version, // 微信版本号
+  //       system: res.system, // 操作系统和版本
+  //       platform: res.platform // 客户端平台
+  //     }
+  //   } catch (e) {
+  //     console.log(e)
+  //   }
+  //   let loginLog = {
+  //     City: null, // 登录所在城市（需要请求用户授权获取手机定位）
+  //     Province: null, // 登录所在省份（需要请求用户授权获取手机定位）
+  //     Country: null, // 登录所在国家（需要请求用户授权获取手机定位）
+  //     Language: systemInfo.language || 'zh_CN', // 浏览的语言风格
+  //     ThirdAppType: 1, // 第三方登录凭证类型 = ['微信小程序' = 1, '其他' = 999], 使用数值，避免变更名称后出错
+  //     SourceType: '小程序', // 登陆渠道 = ['Web', '小程序', 'App', '微信公众号', '其它']
+  //     DeviceType: 'CellPhone', // 登录设备类型 = ['PC', 'Pad', 'CellPhone']
+  //     Sysetm: systemInfo.system || null, // 客户机系统类型
+  //     Platform: 'WeChat', // 产品寄宿的平台
+  //     PFMVersion: null, // 产品寄宿的平台的版本
+  //     ProductVersion: config.productVersion
+  //   }
+  //   return {systemInfo: systemInfo, loginLog: loginLog}
+  // },
+  // 上传图片
+  // https://developers.weixin.qq.com/miniprogram/dev/api/network/upload/wx.uploadFile.html
+  // uploadImg (url, params, cb, failCb) {
+  //   let that = this
+  //   wx.chooseImage({
+  //     count: 1,
+  //     sizeType: ['original', 'compressed'], // 指定原图，默认图
+  //     sourceType: ['album', 'camera'], // 指定来源相册或相机
+  //     success (res) {
+  //       // tempFilePath可以作为img标签的src属性显示图片
+  //       let tempFilePaths = res.tempFilePaths
+  //       let accessToken = wx.getStorageSync('access_token')
+  //       let header = Object.assign({}, {'Authorization': authHttp.authorization(accessToken)})
+  //       wx.uploadFile({
+  //         url: url,
+  //         filePath: tempFilePaths[0],
+  //         name: 'pic',
+  //         formData: params,
+  //         success (res){
+  //           type['isFunction'](cb) && cb(res)
+  //         },
+  //         fail (res) {
+  //           type['isFunction'](failCb) && failCb(res)
+  //         }
+  //       })
+  //     }
+  //   })
+  // },
+  // 拿到上一页对象
+  // getPrePage () {
+  //   let pages = getCurrentPages()
+  //   let length = pages.length
+  //   if (length < 2) {
+  //     throw new Error('不存在前一页Page')
+  //   }
+  //   return pages[length - 2]
+  // },
+  // 根据传入的坐标判断左滑右滑
+  // touchDirection (endX, endY, startX, startY) {
+  //   if (endX - startX > 50 && Math.abs(endY - startY) < 50) {
+  //     return 'right'
+  //   }
+  //   if (endX - startX < -50 && Math.abs(endY - startY) < 50) {
+  //     return 'left'
+  //   }
+  // },
+  // 小于10加0处理
+  addZero (e) {
+    return Number(e) < 10 ? `0${e}` : e
+  },
+  // 时间格式化:同时将时间统一处理成斜杠
+  // yyyy/MM/dd hh:mm:ss
+  dateFormat (dateIn, fmt) {
+    if (!fmt) return false
+    let newDate = type['isDate'](dateIn) ? dateIn : new Date(dateIn)
+    let o = {
+      'y+': newDate.getFullYear(), // 年份
+      'M+': this.addZero(newDate.getMonth() + 1), // 月份
+      'd+': this.addZero(newDate.getDate()), // 某一天
+      'h+': this.addZero(newDate.getHours()), // 小时
+      'm+': this.addZero(newDate.getMinutes()), // 分钟
+      's+': this.addZero(newDate.getSeconds()) // 秒
+    }
+    for (let i in o) {
+      if (new RegExp('(' + i + ')').test(fmt)) {
+        fmt = fmt.replace(RegExp.$1, o[i])
+      }
+    }
+    return fmt
+  },
+  // new 一个时间戳:无参返回当前时间戳,有参返回传入时间的时间戳
+  newTimeStamp (dateIn) {
+    if (!dateIn) {
+      return new Date().getTime()
+    } else {
+      let newDate = type['isDate'](dateIn) ? dateIn : new Date(dateIn)
+      return newDate.getTime()
+    }
+  },
+  // 生成独一无二的字符串:字符串转32进制
+  createUniqueString () {
+    let timestamp = this.newTimeStamp()
+    let randomNum = parseInt((1 + Math.random()) * 65536) + ''
+    return (+(timestamp + randomNum)).toString(32)
+  },
+  // 生成UUID
+  generateUUID () {
+    let d = this.newTimeStamp()
+    let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      let r = (d + Math.random() * 16) % 16 | 0
+      d = Math.floor(d / 16)
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+    })
+    return uuid
+  },
+  // debounce:去抖就是连续多次delay内操作取最后一次操作真正执行
+  // https://segmentfault.com/a/1190000014292298
+  debounce (cb, delay, that) {
+    if (!that.timeId) {
+      that.timeId = setTimeout(() => {
+        cb()
+        that.timeId = null
+      }, delay)
+    }
+  },
+  // 匹配url的某个query值:无window对象则不可用
+  getQueryStringByName (name) {
+    let reg = new RegExp('(^|&)' + name + '=(\\w+|$)', 'i')
+    let r = window.location.search.substr(1).match(reg)
+    let context = ''
+    if (r !== null) {
+      context = r[2]
+    }
+    return context
+  },
+  // 参数去空
+  paramsRemoveNull (obj) {
+    if (type['isObject'](obj)) {
+      for (let item in obj) {
+        if (type['isUndefined'](obj[item]) || type['isNull'](obj[item])) {
+          delete obj[item]
+        }
+      }
+    } else {
+      throw new Error('args should be a object')
+    }
+    return obj
+  },
+  // api请求时，给params动态赋值
+  objectAddAttr (obj, value, attr) {
+    if (type['isObject'](obj) && type['isString'](attr) && value !== null) {
+      let test = {}
+      test[attr] = value
+      Object.assign(obj, test)
+    } else {
+      throw new Error('参数有误')
+    }
+  },
+  areaInfoUtil: areaInfoUtil,
+  validateRules: validateRules
 }
 
 export {util}
