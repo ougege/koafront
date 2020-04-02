@@ -24,12 +24,14 @@
         </div>
       </div>
     </div>
+    <Progress :max="progress.max" :value="progress.value" :show="progress.show"></Progress>
   </div>
 </template>
 
 <script>
 import * as api from '../../api'
 import Dialog from '../../components/DialogCM'
+import Progress from '../../components/Progress'
 import { intro } from './intro'
 // import axios from 'axios'
 export default {
@@ -43,14 +45,21 @@ export default {
         price: '5377',
         deposit: '4839'
       },
-      allForwardList: []
+      allForwardList: [],
+      progress: {
+        value: 1,
+        max: 100,
+        show: false
+      },
+      timeId: ''
     }
   },
-  components: { Dialog },
+  components: { Dialog, Progress },
   created () {},
   destroyed () {},
   mounted () {
     this.dealForwardList()
+    this.timeId = setInterval(this.runProgress, 1000)
   },
   computed: {},
   watch: {},
@@ -101,11 +110,23 @@ export default {
           console.log(err)
         })
       }
+    },
+    runProgress () {
+      console.log(111)
+      this.progress.show = true
+      this.progress.value += 30
+      if (this.progress.value >= this.progress.max) {
+        this.progress.value = 100
+        clearInterval(this.timeId)
+        this.progress.show = false
+        // this.progress.show = false
+      }
+      console.log(this.progress)
     }
   }
 }
 </script>
 
 <style>
-
+dl{text-align: left;}
 </style>
